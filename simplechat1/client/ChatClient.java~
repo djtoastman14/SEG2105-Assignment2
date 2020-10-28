@@ -1,0 +1,159 @@
+// This file contains material supporting section 3.7 of the textbook:
+// "Object Oriented Software Engineering" and is issued under the open-source
+// license found at www.lloseng.com 
+
+package client;
+
+import ocsf.client.*;
+import common.*;
+import java.io.*;
+
+/**
+ * This class overrides some of the methods defined in the abstract
+ * superclass in order to give more functionality to the client.
+ *
+ * @author Dr Timothy C. Lethbridge
+ * @author Dr Robert Lagani&egrave;
+ * @author Fran&ccedil;ois B&eacute;langer
+ * @version July 2000
+ */
+public class ChatClient extends AbstractClient
+{
+  //Instance variables **********************************************
+  
+  /** 
+   * The interface type variable.  It allows the implementation of 
+   * the display method in the client.
+   */
+  ChatIF clientUI; 
+  String alias;
+  
+  //Constructors ****************************************************
+  
+  /**
+   * Constructs an instance of the chat client.
+   *
+   * @param host The server to connect to.
+   * @param port The port number to connect on.
+   * @param clientUI The interface type variable.
+   */
+  
+  public ChatClient(String host, int port, ChatIF clientUI) 
+    throws IOException 
+  {
+    super(host, port); //Call the superclass constructor
+    this.clientUI = clientUI;
+    openConnection();
+  }
+
+  
+  //Instance methods ************************************************
+  
+  /****Changed for E49 RT
+   * prints the server shutdown message
+   */
+  public void connectionClosed() {
+    System.out.println("Server has shut down."); }
+  
+  /****Changed for E49 RT
+   * stops the client from trying to reach the server
+   */
+  public void connectionException(Exception exception) {
+    quit(); }
+  
+  /**
+   * This method handles all data that comes in from the server.
+   *
+   * @param msg The message from the server.
+   */
+  public void handleMessageFromServer(Object msg) 
+  {
+    clientUI.display(msg.toString());
+  }
+
+  /****Changed for E50 RT
+   * This method handles all data coming from the UI            
+   *
+   * @param message The message from the UI.    
+   */
+  public void handleMessageFromClientUI(String message)
+  {
+    if (message.charAt(0) == '#') {
+      String command = "";
+      String param = "";
+      if (message.indexOf(" ") != -1) {
+        command = message.substring(1,message.indexOf(" "));
+        param = message.substring(message.indexOf(" "));
+      }
+      else {
+        command = message.substring(1); }
+      System.out.println(command);
+      System.out.println(param);
+      if (command == "quit") {
+        quit(); }
+      else if (command == "alias") {
+        alias = param; }
+      else if (command == "logoff") {
+         try {
+           closeConnection(); }
+         catch(IOException e) {}
+      }
+      else if (command == "sethost") {
+        if (isConnected()) {
+          System.out.println("Already Connected"); }
+        else {
+          setHost(param); }
+      }
+      else if (command == "setport") {
+        if (isConnected()) {
+          System.out.println("Already Connected"); }
+        else {
+          setPort(Integer.parseInt(param)); }
+      }
+      else if (command == "login") {
+        if (isConnected()) {
+          System.out.println("Already Connected"); }
+        else {
+          try {
+            openConnection(); }
+          catch (IOException e) {
+            System.out.println("Error: failed to login"); }
+        }
+      }
+      else if (command == "getHost") {
+        System.out.println(getHost()); }
+      else if (command == "getPort") {
+        System.out.println(getPort()); }
+      else {
+        System.out.println("Invalid command!"); }
+    }
+    else {
+      try { 
+        sendToServer(message); }
+      catch(IOException e) {
+        clientUI.display("Could not send message to server.  Terminating client.");
+        quit();
+      }
+    }
+  }
+  
+  /**
+   * method to get alias of a user
+   */
+  public String getAlias() {
+    return alias; }
+  
+  /**
+   * This method terminates the client.
+   */
+  public void quit()
+  {
+    try
+    {
+      closeConnection();
+    }
+    catch(IOException e) {}
+    System.exit(0);
+  }
+}
+//End of ChatClient class
